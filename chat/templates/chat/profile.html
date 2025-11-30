@@ -1,0 +1,50 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Profile - ChatApp{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card" style="max-width: 600px; margin: 2rem auto;">
+        <h1 class="card-header">Your Profile</h1>
+
+        <div class="text-center mb-4">
+            {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="Avatar"
+                style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color);">
+            {% else %}
+            <div
+                style="width: 120px; height: 120px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; color: white; margin: 0 auto;">
+                {{ user.username|slice:":1"|upper }}
+            </div>
+            {% endif %}
+            <h2 style="margin-top: 1rem; color: var(--text-primary);">{{ user.username }}</h2>
+            <p style="color: var(--text-muted);">{{ user.email }}</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label" for="id_avatar">Avatar</label>
+                {{ form.avatar }}
+                {% if form.avatar.errors %}
+                <small style="color: var(--danger-color);">{{ form.avatar.errors.0 }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_bio">Bio</label>
+                {{ form.bio }}
+                {% if form.bio.errors %}
+                <small style="color: var(--danger-color);">{{ form.bio.errors.0 }}</small>
+                {% endif %}
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary">Update Profile</button>
+                <a href="{% url 'home' %}" class="btn btn-secondary">Back to Rooms</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

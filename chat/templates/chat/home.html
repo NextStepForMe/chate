@@ -1,0 +1,43 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Chat Rooms - ChatApp{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h1 style="font-size: 2rem; font-weight: 700;">Chat Rooms</h1>
+            <p style="color: var(--text-muted);">Join a room and start chatting</p>
+        </div>
+        <a href="{% url 'create_room' %}" class="btn btn-primary">+ Create Room</a>
+    </div>
+
+    {% if rooms %}
+    <div class="rooms-grid">
+        {% for room in rooms %}
+        <a href="{% url 'room' room.slug %}" class="room-card">
+            <div class="room-name">{{ room.name }}</div>
+            <div class="room-description">
+                {{ room.description|default:"No description" }}
+            </div>
+            <div class="room-meta">
+                <span class="room-badge badge-{{ room.room_type }}">
+                    {{ room.get_room_type_display }}
+                </span>
+                <span>
+                    <span style="color: var(--success-color);">●</span> {{ room.get_online_count }} online
+                </span>
+                <span>{{ room.message_count }} messages</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center" style="padding: 3rem;">
+        <h3 style="color: var(--text-muted); margin-bottom: 1rem;">No rooms available</h3>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Create your first chat room to get started!</p>
+        <a href="{% url 'create_room' %}" class="btn btn-primary">Create Room</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

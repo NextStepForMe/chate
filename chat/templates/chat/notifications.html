@@ -1,0 +1,51 @@
+{% extends 'chat/base.html' %}
+
+{% block title %}Notifications - ChatApp{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card" style="max-width: 800px; margin: 2rem auto;">
+        <div class="flex items-center justify-between mb-3">
+            <h1 class="card-header" style="margin: 0;">Notifications</h1>
+            {% if unread_count > 0 %}
+            <form method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary">Mark All as Read</button>
+            </form>
+            {% endif %}
+        </div>
+
+        {% if notifications %}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            {% for notification in notifications %}
+            <div class="card"
+                style="{% if not notification.is_read %}border-left: 3px solid var(--primary-color);{% endif %}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                            {{ notification.get_notification_type_display }}
+                        </div>
+                        <div style="color: var(--text-secondary);">
+                            {{ notification.content }}
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.5rem;">
+                            {{ notification.created_at|timesince }} ago
+                        </div>
+                    </div>
+                    {% if not notification.is_read %}
+                    <span
+                        style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary-color);"></span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center" style="padding: 3rem; color: var(--text-muted);">
+            <h3>No notifications yet</h3>
+            <p>You'll see notifications here when you receive messages or mentions</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
