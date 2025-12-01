@@ -1,4 +1,5 @@
 {% extends 'chat/base.html' %}
+{% load static %}
 
 {% block title %}{{ room.name }} - ChatApp{% endblock %}
 
@@ -56,6 +57,12 @@
                     <li class="user-item">
                         <span class="user-status online"></span>
                         <span class="user-name">{{ participant.username }}</span>
+                        {% if participant.username != user.username %}
+                        <button class="call-user-btn" data-username="{{ participant.username }}"
+                            title="Call {{ participant.username }}">
+                            📞
+                        </button>
+                        {% endif %}
                     </li>
                     {% endfor %}
                 </ul>
@@ -78,9 +85,46 @@
         </div>
     </div>
 </div>
+
+<!-- Incoming Call Modal -->
+<div class="incoming-call-modal" id="incoming-call-modal">
+    <div class="incoming-call-content">
+        <div class="call-avatar" id="incoming-call-avatar"></div>
+        <div class="caller-name" id="caller-name"></div>
+        <div class="call-type">📞 Incoming Audio Call</div>
+        <div class="call-actions">
+            <button class="call-action-btn accept-call-btn" id="accept-call-btn" title="Accept">
+                ✓
+            </button>
+            <button class="call-action-btn reject-call-btn" id="reject-call-btn" title="Reject">
+                ✕
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Call Widget -->
+<div class="call-widget" id="call-widget">
+    <div class="call-widget-header">
+        <div class="call-widget-avatar" id="call-widget-avatar"></div>
+        <div class="call-widget-info">
+            <div class="call-widget-name" id="call-widget-name"></div>
+            <div class="call-status" id="call-status">Connecting...</div>
+            <div class="call-timer" id="call-timer" style="display: none;">0:00</div>
+        </div>
+    </div>
+    <div class="call-controls">
+        <button class="call-control-btn mute-btn" id="mute-btn">🔊 Mute</button>
+        <button class="call-control-btn end-call-btn" id="end-call-btn">End Call</button>
+    </div>
+</div>
+
+<!-- Remote Audio Element -->
+<audio id="remote-audio" autoplay></audio>
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'js/chat.js' %}"></script>
 <script>
     const roomSlug = '{{ room.slug }}';
     const username = '{{ user.username }}';
@@ -151,6 +195,22 @@
         else if (data.type === 'user_leave') {
             console.log(data.username + ' left the room');
         }
+        // Audio call signaling
+        else if (data.type === 'call_offer') {
+            callManager.handleCallOffer(data.caller, data.offer);
+        }
+        else if (data.type === 'call_answer') {
+            callManager.handleCallAnswer(data.answerer, data.answer);
+        }
+        else if (data.type === 'call_ice_candidate') {
+            callManager.handleIceCandidate(data.sender, data.candidate);
+        }
+        else if (data.type === 'call_reject') {
+            callManager.handleCallReject();
+        }
+        else if (data.type === 'call_end') {
+            callManager.handleCallEnd();
+        }
     };
 
     chatSocket.onclose = function (e) {
@@ -207,5 +267,8 @@
 
     // Focus input on load
     messageInput.focus();
+
+    // Initialize Audio Call Manager
+    const callManager = new AudioCallManager(chatSocket, username);
 </script>
 {% endblock %}

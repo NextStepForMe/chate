@@ -92,6 +92,70 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message_id = data.get('message_id')
             if message_id:
                 await self.mark_message_read(message_id)
+        
+        # Audio call signaling
+        elif message_type == 'call_offer':
+            # Send call offer to specific user
+            target_username = data.get('target_username')
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'call_offer',
+                    'caller': self.user.username,
+                    'target': target_username,
+                    'offer': data.get('offer'),
+                }
+            )
+        
+        elif message_type == 'call_answer':
+            # Send call answer to caller
+            target_username = data.get('target_username')
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'call_answer',
+                    'answerer': self.user.username,
+                    'target': target_username,
+                    'answer': data.get('answer'),
+                }
+            )
+        
+        elif message_type == 'call_ice_candidate':
+            # Exchange ICE candidates
+            target_username = data.get('target_username')
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'call_ice_candidate',
+                    'sender': self.user.username,
+                    'target': target_username,
+                    'candidate': data.get('candidate'),
+                }
+            )
+        
+        elif message_type == 'call_reject':
+            # Reject incoming call
+            target_username = data.get('target_username')
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'call_reject',
+                    'rejector': self.user.username,
+                    'target': target_username,
+                }
+            )
+        
+        elif message_type == 'call_end':
+            # End active call
+            target_username = data.get('target_username')
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'call_end',
+                    'ender': self.user.username,
+                    'target': target_username,
+                }
+            )
     
     async def chat_message(self, event):
         # Send message to WebSocket
@@ -125,6 +189,50 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'type': 'user_leave',
             'username': event['username'],
         }))
+    
+    # Call signaling handlers
+    async def call_offer(self, event):
+        # Send call offer only to target user
+        if event['target'] == self.user.username:
+            await self.send(text_data=json.dumps({
+                'type': 'call_offer',
+                'caller': event['caller'],
+                'offer': event['offer'],
+            }))
+    
+    async def call_answer(self, event):
+        # Send call answer only to target user (caller)
+        if event['target'] == self.user.username:
+            await self.send(text_data=json.dumps({
+                'type': 'call_answer',
+                'answerer': event['answerer'],
+                'answer': event['answer'],
+            }))
+    
+    async def call_ice_candidate(self, event):
+        # Send ICE candidate only to target user
+        if event['target'] == self.user.username:
+            await self.send(text_data=json.dumps({
+                'type': 'call_ice_candidate',
+                'sender': event['sender'],
+                'candidate': event['candidate'],
+            }))
+    
+    async def call_reject(self, event):
+        # Send call rejection only to target user (caller)
+        if event['target'] == self.user.username:
+            await self.send(text_data=json.dumps({
+                'type': 'call_reject',
+                'rejector': event['rejector'],
+            }))
+    
+    async def call_end(self, event):
+        # Send call end notification to target user
+        if event['target'] == self.user.username:
+            await self.send(text_data=json.dumps({
+                'type': 'call_end',
+                'ender': event['ender'],
+            }))
     
     @database_sync_to_async
     def save_message(self, username, message_content):
